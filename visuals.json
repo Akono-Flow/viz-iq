@@ -1,0 +1,72 @@
+[
+  {
+    "Pkey": "1",
+    "Qkey": "1",
+    "Year": "2026",
+    "Round": "1",
+    "Match": "1",
+    "Subject": "Sports",
+    "Question": "Identify this athlete.",
+    "Answer": "Usain Bolt",
+    "ImageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Usain_Bolt_2012_Olympics.jpg/440px-Usain_Bolt_2012_Olympics.jpg",
+    "LocalImageUrl": "",
+    "Section": "buzzer",
+    "Info": "## JAMAICAN SPRINTER\n\nHolder of world records in the **100m** (9.58s) and **200m** (19.19s).\n\nWon 8 Olympic gold medals across three Games (2008, 2012, 2016)."
+  },
+  {
+    "Pkey": "2",
+    "Qkey": "2",
+    "Year": "2026",
+    "Round": "1",
+    "Match": "1",
+    "Subject": "Local and International Affairs",
+    "Question": "Look at the monitor and identify the following person.",
+    "Answer": "Sean Duffy",
+    "ImageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Secretary_of_Transportation_Sean_Duffy_Official_Portrait.jpg/500px-Secretary_of_Transportation_Sean_Duffy_Official_Portrait.jpg",
+    "LocalImageUrl": "https://akono-flow.github.io/scq-buzzer-online/images/2026/buzzer/Sean-Duffy.jpeg",
+    "Section": "buzzer",
+    "Info": "## UNITED STATES SECRETARY OF TRANSPORTATION\n\n<a href=\"https://www.nytimes.com/2025/06/23/us/politics/sean-duffy-reality-television.html\" target=\"_blank\">Former television personality</a>\n\nServed as acting administrator of NASA from July to December 2025."
+  },
+  {
+    "Pkey": "3",
+    "Qkey": "3",
+    "Year": "2026",
+    "Round": "2",
+    "Match": "1",
+    "Subject": "Arts",
+    "Question": "Identify this artist.",
+    "Answer": "Kehinde Wiley",
+    "ImageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Kehinde_Wiley_2018.jpg/440px-Kehinde_Wiley_2018.jpg",
+    "LocalImageUrl": "",
+    "Section": "alternate",
+    "Info": "## AMERICAN VISUAL ARTIST\n\nKnown for large-scale portraits of Black men in heroic poses, inspired by Old Masters paintings.\n\nPainted the **official portrait of President Barack Obama** for the National Portrait Gallery (2018)."
+  },
+  {
+    "Pkey": "4",
+    "Qkey": "4",
+    "Year": "2026",
+    "Round": "2",
+    "Match": "2",
+    "Subject": "Cinema",
+    "Question": "Who is this director?",
+    "Answer": "Ava DuVernay",
+    "ImageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Ava_DuVernay_%2836093139542%29.jpg/440px-Ava_DuVernay_%2836093139542%29.jpg",
+    "LocalImageUrl": "",
+    "Section": "minute",
+    "Info": "## AMERICAN DIRECTOR & FILMMAKER\n\nFirst Black woman to win Best Director at Sundance Film Festival (*Middle of Nowhere*, 2012).\n\nDirected *Selma* (2014) and the Netflix documentary *13th* (2016)."
+  },
+  {
+    "Pkey": "5",
+    "Qkey": "5",
+    "Year": "2026",
+    "Round": "3",
+    "Match": "1",
+    "Subject": "Sports",
+    "Question": "Identify this cricketer.",
+    "Answer": "Chris Gayle",
+    "ImageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Chris_Gayle_2014.jpg/440px-Chris_Gayle_2014.jpg",
+    "LocalImageUrl": "",
+    "Section": "buzzer",
+    "Info": "## WEST INDIAN CRICKETER\n\nNicknamed **'The Universe Boss'**.\n\nHolds the record for the highest individual score in T20 International cricket (**117 runs**).\n\nPlayed for Jamaica in regional cricket."
+  }
+]
