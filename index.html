@@ -509,32 +509,46 @@
     .info-panel {
       position: fixed;
       z-index: 500;
+      top: 80px;
+      right: 20px;
       width: 340px;
-      max-height: 80vh;
+      max-height: calc(100vh - 100px);
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px var(--accent-glow);
       overflow: hidden;
-      display: none;
       flex-direction: column;
       pointer-events: none;
-      transition: opacity 0.18s ease;
+      /* Use opacity + visibility so the panel never "jumps" in/out of layout */
       opacity: 0;
+      visibility: hidden;
+      transform: translateX(12px);
+      transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+      display: flex;
     }
     .info-panel.visible {
-      display: flex;
       opacity: 1;
+      visibility: visible;
       pointer-events: auto;
-      animation: panelIn 0.18s ease;
+      transform: translateX(0);
     }
     .info-panel.pinned {
       border-color: var(--accent);
       box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 2px var(--accent);
     }
-    @keyframes panelIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
+    /* Pin indicator tab */
+    .info-panel.pinned .info-panel-header::before {
+      content: 'PINNED';
+      font-size: 9px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      letter-spacing: 1px;
+      color: var(--accent);
+      background: var(--accent-glow);
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-right: 8px;
     }
 
     .info-panel-header {
@@ -1547,8 +1561,7 @@ function buildCard(item, idx) {
 
   // Info panel on hover (only if Info exists)
   if (item.Info) {
-    card.addEventListener('mouseenter', (e) => showInfoPanel(item, e));
-    card.addEventListener('mousemove',  (e) => positionInfoPanel(e));
+    card.addEventListener('mouseenter', () => showInfoPanel(item));
     card.addEventListener('mouseleave', () => scheduleHidePanel());
   }
 
@@ -1578,34 +1591,22 @@ const infoPanelBody  = document.getElementById('infoPanelBody');
 const pinBtn         = document.getElementById('pinBtn');
 const closePanelBtn  = document.getElementById('closePanelBtn');
 
-function showInfoPanel(item, e) {
+function showInfoPanel(item) {
   if (infoPanelPinned) return;
   clearTimeout(hideTimer);
   infoPanelTitle.textContent = item.Answer || 'Info';
   infoPanelBody.innerHTML = marked.parse(item.Info);
-  positionInfoPanel(e);
   infoPanel.classList.add('visible');
   infoPanelVisible = true;
 }
 
-function positionInfoPanel(e) {
-  if (infoPanelPinned) return;
-  const panelW = 340, panelH = 360;
-  const vw = window.innerWidth, vh = window.innerHeight;
-  let x = e.clientX + 16;
-  let y = e.clientY + 16;
-  if (x + panelW > vw - 8) x = e.clientX - panelW - 16;
-  if (y + panelH > vh - 8) y = e.clientY - panelH - 16;
-  infoPanel.style.left = Math.max(8, x) + 'px';
-  infoPanel.style.top  = Math.max(8, y) + 'px';
-}
-
 function scheduleHidePanel() {
   if (infoPanelPinned) return;
+  // 700ms grace period — plenty of time to move cursor across to the panel
   hideTimer = setTimeout(() => {
     infoPanel.classList.remove('visible');
     infoPanelVisible = false;
-  }, 300);
+  }, 700);
 }
 
 infoPanel.addEventListener('mouseenter', () => clearTimeout(hideTimer));
