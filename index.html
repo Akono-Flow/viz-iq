@@ -559,6 +559,13 @@
       border-bottom: 1px solid var(--border);
       background: var(--surface-2);
       flex-shrink: 0;
+      user-select: none;
+    }
+    .info-panel.pinned .info-panel-header {
+      cursor: grab;
+    }
+    .info-panel.pinned .info-panel-header:active {
+      cursor: grabbing;
     }
     .info-panel-title {
       font-family: 'Crimson Pro', serif;
@@ -1026,14 +1033,108 @@
     .fc-score-display .s-knew { color: var(--success); }
     .fc-score-display .s-missed { color: var(--danger); }
 
-    /* ─── HIDE NAME MODE toggle overlay ──────────────────────── */
+    /* ─── STUDY MODE (hide names everywhere) ─────────────────── */
+
+    /* Card name redaction */
     .name-hidden .card-name {
-      background: var(--surface-2);
-      color: transparent;
-      border-radius: 4px;
+      position: relative;
+      color: transparent !important;
       user-select: none;
-      cursor: not-allowed;
     }
+    .name-hidden .card-name::after {
+      content: '';
+      position: absolute;
+      inset: 2px 0;
+      background: var(--surface-2);
+      border-radius: 4px;
+      border: 1px dashed var(--border);
+    }
+
+    /* Reveal button that sits on each card in study mode */
+    .card-reveal-btn {
+      display: none;
+      width: 100%;
+      margin: 0 0 10px;
+      padding: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      border: 1px dashed var(--accent);
+      background: var(--accent-glow);
+      color: var(--accent);
+      cursor: pointer;
+      transition: all var(--transition);
+      letter-spacing: 0.4px;
+    }
+    .card-reveal-btn:hover { background: var(--accent); color: #fff; }
+    .name-hidden .card-reveal-btn { display: block; }
+
+    /* When a single card is revealed inside study mode */
+    .card.revealed .card-name {
+      color: var(--text) !important;
+    }
+    .card.revealed .card-name::after { display: none; }
+    .card.revealed .card-reveal-btn {
+      border-color: var(--text-faint);
+      background: transparent;
+      color: var(--text-faint);
+    }
+    .card.revealed .card-reveal-btn::before { content: '✓ '; }
+
+    /* Info panel title in study mode */
+    .study-mode-active .info-panel-title {
+      color: transparent !important;
+      position: relative;
+      user-select: none;
+      pointer-events: none;
+    }
+    .study-mode-active .info-panel-title::after {
+      content: '— hidden —';
+      position: absolute;
+      left: 0; top: 0;
+      color: var(--text-faint);
+      font-style: italic;
+      font-size: 13px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 400;
+      pointer-events: none;
+    }
+
+    /* Lightbox name in study mode */
+    .study-mode-active #lbName {
+      color: transparent !important;
+      position: relative;
+      user-select: none;
+    }
+    .study-mode-active #lbName::after {
+      content: '';
+      position: absolute;
+      inset: 4px 0;
+      background: var(--surface-2);
+      border-radius: 6px;
+      border: 1px dashed var(--border);
+    }
+    /* Reveal button inside lightbox */
+    #lbRevealBtn {
+      display: none;
+      margin-top: 8px;
+      padding: 5px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      border: 1px dashed var(--accent);
+      background: var(--accent-glow);
+      color: var(--accent);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    #lbRevealBtn:hover { background: var(--accent); color: #fff; }
+    .study-mode-active #lbRevealBtn { display: inline-block; }
+    .study-mode-active.lb-name-revealed #lbName {
+      color: var(--text) !important;
+    }
+    .study-mode-active.lb-name-revealed #lbName::after { display: none; }
+    .study-mode-active.lb-name-revealed #lbRevealBtn { display: none; }
 
     /* ─── EMPTY STATE ─────────────────────────────────────────── */
     .empty-state {
@@ -1236,6 +1337,7 @@
     <div class="lightbox-info">
       <div class="lightbox-info-header">
         <div class="lightbox-name" id="lbName"></div>
+        <button id="lbRevealBtn">👁 Reveal name</button>
         <div class="lightbox-subject" id="lbSubject"></div>
         <div class="lightbox-meta" id="lbMeta"></div>
       </div>
@@ -1527,6 +1629,18 @@ function buildCard(item, idx) {
   name.textContent = item.Answer || '—';
   body.appendChild(name);
 
+  // Per-card reveal button (only visible in study mode)
+  const revealBtn = document.createElement('button');
+  revealBtn.className = 'card-reveal-btn';
+  revealBtn.textContent = 'Reveal name';
+  revealBtn.onclick = (e) => {
+    e.stopPropagation();
+    const wasRevealed = card.classList.contains('revealed');
+    card.classList.toggle('revealed', !wasRevealed);
+    revealBtn.textContent = wasRevealed ? 'Reveal name' : 'Hide name';
+  };
+  body.appendChild(revealBtn);
+
   const meta = document.createElement('div');
   meta.className = 'card-meta';
   if (item.Year)    meta.innerHTML += `<span>📅 ${item.Year}</span>`;
@@ -1626,6 +1740,94 @@ closePanelBtn.addEventListener('click', () => {
   infoPanelVisible = false;
 });
 
+/* ─── INFO PANEL DRAG (only when pinned) ──────────────────────── */
+(function initPanelDrag() {
+  let dragging = false;
+  let startX, startY, startLeft, startTop;
+
+  const header = document.getElementById('infoPanel').querySelector('.info-panel-header');
+
+  header.addEventListener('mousedown', (e) => {
+    if (!infoPanelPinned) return;
+    // Don't start drag if clicking a button inside the header
+    if (e.target.closest('button')) return;
+    dragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    const rect = infoPanel.getBoundingClientRect();
+    startLeft = rect.left;
+    startTop  = rect.top;
+    // Switch from right-anchor to left-anchor so we can freely position
+    infoPanel.style.right = 'auto';
+    infoPanel.style.left  = startLeft + 'px';
+    infoPanel.style.top   = startTop  + 'px';
+    infoPanel.style.transition = 'none';
+    document.body.style.cursor = 'grabbing';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    const newLeft = Math.max(0, Math.min(window.innerWidth  - infoPanel.offsetWidth,  startLeft + dx));
+    const newTop  = Math.max(0, Math.min(window.innerHeight - infoPanel.offsetHeight, startTop  + dy));
+    infoPanel.style.left = newLeft + 'px';
+    infoPanel.style.top  = newTop  + 'px';
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    infoPanel.style.transition = '';
+    document.body.style.cursor = '';
+  });
+
+  // Touch support
+  header.addEventListener('touchstart', (e) => {
+    if (!infoPanelPinned) return;
+    if (e.target.closest('button')) return;
+    const t = e.touches[0];
+    dragging = true;
+    startX = t.clientX;
+    startY = t.clientY;
+    const rect = infoPanel.getBoundingClientRect();
+    startLeft = rect.left;
+    startTop  = rect.top;
+    infoPanel.style.right = 'auto';
+    infoPanel.style.left  = startLeft + 'px';
+    infoPanel.style.top   = startTop  + 'px';
+    infoPanel.style.transition = 'none';
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!dragging) return;
+    const t = e.touches[0];
+    const dx = t.clientX - startX;
+    const dy = t.clientY - startY;
+    const newLeft = Math.max(0, Math.min(window.innerWidth  - infoPanel.offsetWidth,  startLeft + dx));
+    const newTop  = Math.max(0, Math.min(window.innerHeight - infoPanel.offsetHeight, startTop  + dy));
+    infoPanel.style.left = newLeft + 'px';
+    infoPanel.style.top  = newTop  + 'px';
+  }, { passive: true });
+
+  document.addEventListener('touchend', () => {
+    if (!dragging) return;
+    dragging = false;
+    infoPanel.style.transition = '';
+  });
+
+  // When panel is unpinned, reset to default anchor position
+  pinBtn.addEventListener('click', () => {
+    if (!infoPanelPinned) {
+      // Was just unpinned — restore default position
+      infoPanel.style.left   = '';
+      infoPanel.style.top    = '';
+      infoPanel.style.right  = '20px';
+    }
+  });
+})();
+
 /* ─── LIGHTBOX ────────────────────────────────────────────────── */
 const lightboxOverlay = document.getElementById('lightboxOverlay');
 const lightboxImg     = document.getElementById('lightboxImg');
@@ -1637,6 +1839,7 @@ const lbInfoBody      = document.getElementById('lbInfoBody');
 function openLightbox(idx) {
   lbIndex = idx;
   lbUseLocal = true;
+  document.body.classList.remove('lb-name-revealed');
   renderLightbox();
   lightboxOverlay.classList.add('visible');
   document.body.style.overflow = 'hidden';
@@ -1707,16 +1910,20 @@ function loadLightboxImg(item) {
 }
 
 document.getElementById('lightboxClose').onclick = closeLightbox;
-document.getElementById('lbPrev').onclick = () => { lbIndex = (lbIndex - 1 + filteredData.length) % filteredData.length; lbUseLocal = true; renderLightbox(); };
-document.getElementById('lbNext').onclick = () => { lbIndex = (lbIndex + 1) % filteredData.length; lbUseLocal = true; renderLightbox(); };
+document.getElementById('lbPrev').onclick = () => { lbIndex = (lbIndex - 1 + filteredData.length) % filteredData.length; lbUseLocal = true; document.body.classList.remove('lb-name-revealed'); renderLightbox(); };
+document.getElementById('lbNext').onclick = () => { lbIndex = (lbIndex + 1) % filteredData.length; lbUseLocal = true; document.body.classList.remove('lb-name-revealed'); renderLightbox(); };
+
+document.getElementById('lbRevealBtn').addEventListener('click', () => {
+  document.body.classList.add('lb-name-revealed');
+});
 
 lightboxOverlay.addEventListener('click', (e) => { if (e.target === lightboxOverlay) closeLightbox(); });
 
 document.addEventListener('keydown', (e) => {
   if (lightboxOverlay.classList.contains('visible')) {
     if (e.key === 'Escape')      closeLightbox();
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { lbIndex = (lbIndex + 1) % filteredData.length; lbUseLocal = true; renderLightbox(); }
-    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { lbIndex = (lbIndex - 1 + filteredData.length) % filteredData.length; lbUseLocal = true; renderLightbox(); }
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { lbIndex = (lbIndex + 1) % filteredData.length; lbUseLocal = true; document.body.classList.remove('lb-name-revealed'); renderLightbox(); }
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { lbIndex = (lbIndex - 1 + filteredData.length) % filteredData.length; lbUseLocal = true; document.body.classList.remove('lb-name-revealed'); renderLightbox(); }
   }
 });
 
@@ -1999,7 +2206,18 @@ document.getElementById('hideNamesBtn').addEventListener('click', () => {
   document.getElementById('hideNamesBtn').classList.toggle('active', isNamesHidden);
   const grid = document.getElementById('galleryGrid');
   grid.classList.toggle('name-hidden', isNamesHidden);
-  toast(isNamesHidden ? 'Names hidden — test yourself!' : 'Names revealed', 'info');
+  document.body.classList.toggle('study-mode-active', isNamesHidden);
+  // Reset any individually-revealed cards when toggling mode off
+  if (!isNamesHidden) {
+    grid.querySelectorAll('.card.revealed').forEach(c => {
+      c.classList.remove('revealed');
+      const rb = c.querySelector('.card-reveal-btn');
+      if (rb) rb.textContent = 'Reveal name';
+    });
+    // Also reset lightbox reveal state
+    document.body.classList.remove('lb-name-revealed');
+  }
+  toast(isNamesHidden ? 'Study mode on — names hidden everywhere' : 'Study mode off — names restored', isNamesHidden ? 'info' : 'success');
 });
 
 document.getElementById('viewToggleBtn').addEventListener('click', () => {
